@@ -267,8 +267,14 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
   .st-dot{width:5px;height:5px}
   .drawer{top:auto;bottom:0;left:0;right:0;width:auto;max-height:46vh;
     border-radius:12px 12px 0 0;transform:translateY(16px);z-index:24;
-    background:#0a0d15!important}
+    background:#0a0d15!important;transition:transform .3s cubic-bezier(.2,.7,.2,1),max-height .3s cubic-bezier(.2,.7,.2,1)}
   .drawer.on{transform:none}
+  /* tapped a paper → sheet peeks low so the topology shows above */
+  .drawer.peek{max-height:38vh}
+  .pp.sel{background:rgba(95,184,255,.10)}
+  .pp.sel .ppb>a{color:var(--c1)}
+  .pp.sel .ppb::after{content:"tap title again to open ↗";display:block;margin-top:5px;
+    font-size:9px;letter-spacing:.03em;color:var(--c1);opacity:.9}
   body.drawer-open .legend,body.drawer-open .reset{opacity:0;pointer-events:none}
   .dr-title{font-size:17px}
   .dr-head{padding:11px 14px 9px}
@@ -773,10 +779,41 @@ function paperRow(p){
 }
 /* clicking a keyword chip inside the drawer jumps into that keyword's system */
 drList.addEventListener("click",e=>{
-  const kw=e.target.closest(".pk"); if(!kw)return;
+  const kw=e.target.closest(".pk"); if(!kw||kw.classList.contains("pkl"))return;
   const n=byId.get(kw.dataset.kw); if(n)enterSystem(n);
 });
-/* hovering a paper row pings its keywords on the topology */
+
+/* ---- mobile: tap a paper row to preview its keyword relations first ----
+   first tap = show topology pings + shrink the sheet; tapping the title
+   a second time opens the paper. (desktop keeps hover→click.) */
+let selRow=null;
+function clearRowSel(){
+  if(selRow)selRow.classList.remove("sel");
+  selRow=null;drawer.classList.remove("peek");hidePaperLoc();}
+function selectRow(row){
+  if(selRow)selRow.classList.remove("sel");
+  selRow=row;row.classList.add("sel");
+  const ks=(row.dataset.ks||"").split(",").filter(s=>s!=="").map(Number);
+  if(!ks.length){clearRowSel();return;}
+  showPaperLoc(ks);
+  drawer.classList.add("peek");
+  fit(new Set(ks.map(i=>nodes[i].id)));          // pan pinged keywords into the visible upper half
+}
+drList.addEventListener("click",e=>{
+  if(!isMobile())return;
+  if(e.target.closest(".pkl"))return;            // arXiv / code links navigate
+  if(e.target.closest(".pk"))return;             // keyword chip handled above
+  const row=e.target.closest(".pp"); if(!row||!row.hasAttribute("data-ks"))return;  // workshop rows navigate
+  const onTitle=!!e.target.closest("a");
+  if(selRow===row){
+    if(onTitle)return;                           // 2nd tap on the title → open
+    clearRowSel();return;                        // tap elsewhere on selected row → deselect
+  }
+  if(onTitle)e.preventDefault();                 // 1st tap → preview, don't open yet
+  selectRow(row);
+},true);
+
+/* hovering a paper row pings its keywords on the topology (desktop) */
 let hoverRow=null;
 function showPaperLoc(ks){
   const kwNodes=ks.map(ix=>nodes[ix]).filter(Boolean);
@@ -795,12 +832,13 @@ function hidePaperLoc(){
   applyHL(curKeep,curAccent);
 }
 drList.addEventListener("mouseover",e=>{
+  if(isMobile())return;
   const row=e.target.closest(".pp"); if(!row||row===hoverRow)return;
   hoverRow=row;
   const ks=(row.dataset.ks||"").split(",").filter(s=>s!=="").map(Number);
   if(ks.length)showPaperLoc(ks);else hidePaperLoc();
 });
-drList.addEventListener("mouseleave",()=>{hoverRow=null;hidePaperLoc();});
+drList.addEventListener("mouseleave",()=>{if(isMobile())return;hoverRow=null;hidePaperLoc();});
 function wsRow(w){const col=wcolor(w[2]);
   return `<div class="pp"><span class="pd" style="background:${col};color:${col}"></span>
     <div class="ppb"><a href="${w[1]}" target="_blank" rel="noopener">${w[0]}</a>
@@ -825,14 +863,15 @@ function openDrawer(title,col,papers,subHtml,rowFn){
   drTitle.textContent=title;drTitle.style.color=col;
   drSub.innerHTML=subHtml||`<b>${papers.length}</b> papers · click a title to open on CVF`;
   drawer.classList.add("on");document.body.classList.add("drawer-open");
+  selRow=null;drawer.classList.remove("peek");     /* fresh list, clear any tap-preview */
   closeControls();                 /* don't stack the controls sheet under the papers sheet */
   const waiting=!drRowFn&&(DS===1?FINDINGS===null:PAPERS===null);
   if(waiting){drList.innerHTML='<div class="pp"><a>loading papers…</a></div>';
     const t=setInterval(()=>{if(DS===1?FINDINGS!==null:PAPERS!==null){clearInterval(t);drList.innerHTML="";renderMore();}},120);}
   else renderMore();
 }
-function closeDrawer(){drawer.classList.remove("on");document.body.classList.remove("drawer-open");
-  pingG.selectAll("circle").remove();pingSel=null;hoverRow=null;}
+function closeDrawer(){drawer.classList.remove("on","peek");document.body.classList.remove("drawer-open");
+  pingG.selectAll("circle").remove();pingSel=null;hoverRow=null;selRow=null;}
 document.getElementById("dr-close").onclick=e=>{e.stopPropagation();clearFocus();};
 drMore.onclick=renderMore;
 
