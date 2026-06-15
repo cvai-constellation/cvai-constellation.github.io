@@ -246,13 +246,19 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
   .search-row{padding:10px 13px}
   #q{font-size:12px}
   .search-hint{display:none}
-  .legend{left:10px;bottom:10px;min-width:0;max-width:62vw;padding:10px 12px 11px}
-  .legend .lt{font-size:8px;letter-spacing:.22em;margin-bottom:7px}
-  #legend-rows{max-height:17vh}
-  .lrow{padding:3px 0}
-  .lname{font-size:9.5px}.lcount{font-size:8.5px}
-  .mso{font-size:7.5px;letter-spacing:.06em;padding:7px 1px}
-  .chips{display:none}
+  /* controls become an opaque bottom sheet, hidden until the ☰ button */
+  .legend{left:0;right:0;bottom:0;top:auto;width:auto;min-width:0;max-width:none;
+    border-radius:16px 16px 0 0;max-height:80vh;overflow-y:auto;
+    padding:18px 16px 80px;background:#0a0d15!important;
+    transform:translateY(106%);transition:transform .32s cubic-bezier(.2,.7,.2,1);
+    z-index:26;box-shadow:0 -14px 44px rgba(0,0,0,.6)}
+  .legend.open{transform:none}
+  .legend .lt{font-size:9px;letter-spacing:.22em;margin-bottom:9px}
+  #legend-rows{max-height:38vh}
+  .lrow{padding:6px 0}
+  .lname{font-size:11px}.lcount{font-size:10px}
+  .mso{font-size:9px;letter-spacing:.06em;padding:9px 2px}
+  .chips{display:flex;margin-top:12px}
   /* stats: plain text only on small screens */
   .stats{margin-top:7px}
   .st-geo{display:none}
@@ -261,7 +267,7 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
   .st-dot{width:5px;height:5px}
   .drawer{top:auto;bottom:0;left:0;right:0;width:auto;max-height:46vh;
     border-radius:12px 12px 0 0;transform:translateY(16px);z-index:24;
-    background:rgba(9,12,19,.97)}
+    background:#0a0d15!important}
   .drawer.on{transform:none}
   body.drawer-open .legend,body.drawer-open .reset{opacity:0;pointer-events:none}
   .dr-title{font-size:17px}
@@ -287,6 +293,21 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
   body.kb .drawer{top:150px}
 }
 
+/* ───────── mobile controls button (opens the bottom sheet) ───────── */
+.ctrlbtn{display:none}
+.wm-sheet{display:none}
+@media(max-width:860px){
+  .ctrlbtn{display:inline-flex;align-items:center;gap:8px;position:fixed;z-index:27;
+    left:12px;bottom:16px;font-family:inherit;font-size:10.5px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink);background:rgba(13,17,26,.95);
+    border:1px solid var(--line);border-radius:24px;padding:11px 18px;cursor:pointer;
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,.45)}
+  html.light .ctrlbtn{background:rgba(251,248,241,.95)}
+  .wm-sheet{display:block;margin-top:16px;padding-top:13px;border-top:1px solid var(--line);
+    text-align:center;font-size:8.5px;letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
+  .wm-sheet a{color:var(--muted);text-decoration:none}
+}
+
 /* ───────── watermark ───────── */
 .wm{position:fixed;z-index:21;right:16px;bottom:12px;font-size:9px;letter-spacing:.08em;
   color:var(--dim);text-transform:uppercase}
@@ -294,7 +315,7 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
 .wm a:hover{color:var(--ink)}
 .wm-sep{margin:0 6px;opacity:.6}
 .wm-un{cursor:help;border-bottom:1px dotted var(--dim)}
-@media(max-width:860px){.wm{right:12px;bottom:48px;font-size:8px}}
+@media(max-width:860px){.wm{display:none}}
 
 /* ───────── theme switch ───────── */
 .themebtn{position:fixed;z-index:21;top:30px;right:404px;width:41px;height:41px;border-radius:50%;
@@ -334,7 +355,8 @@ html.light .lite .panel{background:rgba(251,248,241,.9)}
 html.light .lite .masthead{background:none}
 html.light .lite .drawer{background:rgba(251,248,241,.96)}
 @media(max-width:860px){
-  html.light .drawer{background:rgba(251,248,241,.97)}
+  html.light .drawer{background:#faf6ee!important}
+  html.light .legend{background:#faf6ee!important}
 }
 </style>
 </head>
@@ -363,6 +385,8 @@ html.light .lite .drawer{background:rgba(251,248,241,.96)}
 
 <button class="themebtn" id="themebtn" title="switch theme">☀</button>
 
+<button class="ctrlbtn" id="ctrlbtn">☰ controls</button>
+
 <div class="panel legend">
   <div class="pfilter" id="pfilter">
     <span class="ftl">filter</span>
@@ -379,6 +403,7 @@ html.light .lite .drawer{background:rgba(251,248,241,.96)}
   <div class="lt" id="lt">Star Systems · click to enter</div>
   <div id="legend-rows"></div>
   <div class="chips" id="chips"></div>
+  <div class="wm-sheet">✦ by <a href="https://deo-ahn.github.io" target="_blank" rel="noopener">Deokhyun Ahn</a> · <a href="https://github.com/cvpr-constellation/cvpr-constellation.github.io" target="_blank" rel="noopener">GitHub</a> · unofficial</div>
 </div>
 
 <div class="panel detail" id="detail"></div>
@@ -700,7 +725,17 @@ function hoverNode(d){ if(focused)return; const k=nbrIds(d.id); k.add(d.id); set
 function unhover(){ if(focused)return; setHighlight(null); hideDetail(); }
 node.on("mouseenter",(e,d)=>hoverNode(d)).on("mouseleave",unhover)
     .on("click",(e,d)=>{e.stopPropagation();enterSystem(d);});
-svg.on("click",()=>{if(focused)clearFocus();});
+svg.on("click",()=>{if(legendOpen())closeControls();else if(focused)clearFocus();});
+
+/* ---------- mobile controls sheet ---------- */
+const ctrlBtn=document.getElementById("ctrlbtn"), legendEl=document.querySelector(".legend");
+function legendOpen(){return legendEl.classList.contains("open");}
+function closeControls(){legendEl.classList.remove("open");if(ctrlBtn)ctrlBtn.textContent="☰ controls";}
+function openControls(){legendEl.classList.add("open");if(ctrlBtn)ctrlBtn.textContent="✕ close";closeDrawer();}
+if(ctrlBtn)ctrlBtn.onclick=()=>legendOpen()?closeControls():openControls();
+/* picking a mode / cluster / chip dismisses the sheet so the result is visible */
+legendEl.addEventListener("click",e=>{
+  if(isMobile()&&e.target.closest(".lrow,.mso,.chip"))closeControls();});
 
 /* ---------- hover detail ---------- */
 const detail=document.getElementById("detail");
@@ -790,6 +825,7 @@ function openDrawer(title,col,papers,subHtml,rowFn){
   drTitle.textContent=title;drTitle.style.color=col;
   drSub.innerHTML=subHtml||`<b>${papers.length}</b> papers · click a title to open on CVF`;
   drawer.classList.add("on");document.body.classList.add("drawer-open");
+  closeControls();                 /* don't stack the controls sheet under the papers sheet */
   const waiting=!drRowFn&&(DS===1?FINDINGS===null:PAPERS===null);
   if(waiting){drList.innerHTML='<div class="pp"><a>loading papers…</a></div>';
     const t=setInterval(()=>{if(DS===1?FINDINGS!==null:PAPERS!==null){clearInterval(t);drList.innerHTML="";renderMore();}},120);}
