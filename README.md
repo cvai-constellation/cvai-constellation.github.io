@@ -1,6 +1,8 @@
-# CVPR 2026 · Research Constellation
+# CVPR & ECCV 2026 · Research Constellation
 
-An interactive keyword co-occurrence map of all **4,068 accepted papers at CVPR 2026**, rendered as a navigable "star map" — keywords are stars, co-occurrences are the threads between them, and research communities form star systems.
+An interactive keyword co-occurrence map of **4,068 CVPR 2026 papers** and **2,834 unique ECCV 2026 accepted papers**, rendered as a navigable "star map" — keywords are stars, co-occurrences are the threads between them, and research communities form star systems.
+
+Use the conference tabs in the masthead to switch views. The ECCV source list is preliminary pending publisher checks; 17 repeated schedule rows are deduplicated by official poster URL.
 
 **Live demo → https://cvpr-constellation.github.io/**
 
@@ -8,7 +10,8 @@ An interactive keyword co-occurrence map of all **4,068 accepted papers at CVPR 
 
 ## Features
 
-- **Constellation view** — 89 keywords sized by paper frequency, force-laid-out into 6 co-occurrence communities (Louvain), each with a name plate and a soft hull
+- **Constellation view** — 89 CVPR or 72 ECCV keywords sized by paper frequency, force-laid-out into 6 or 5 co-occurrence communities (Louvain), each with a name plate and a soft hull
+- **Conference tabs** — switch between the CVPR 2026 and ECCV 2026 constellations
 - **CVPR Topics view** — toggle to re-group the same topology by the official CVPR call-for-papers topics (27 topics, every keyword mapped)
 - **Star-system mode** — click any keyword to fly into its system: the keyword becomes the central star and its co-occurring keywords arrange into orbits (stronger link = closer orbit)
 - **Unified search** — one box matches keywords, paper titles **and authors**; an exact keyword query flies straight into its system
@@ -21,7 +24,7 @@ An interactive keyword co-occurrence map of all **4,068 accepted papers at CVPR 
 - **Visitor stats** — cumulative visitors, ~live viewers, top regions and a mini world map (serverless: [Abacus](https://abacus.jasoncameron.dev) counters + [ipapi.co](https://ipapi.co))
 - **Mobile-friendly** — responsive layout with a bottom-sheet paper list and a lite rendering tier (no SVG filters) for phones/tablets
 
-Everything is a single static `index.html` + two JSON files. No build step, no backend.
+Everything is a static `index.html` plus compact JSON data files. No app build step, no backend.
 
 ## Run it yourself
 
@@ -42,7 +45,15 @@ Or fork this repo and enable GitHub Pages.
    ```
 3. This regenerates `graph.json` and `papers.json`. If the keyword set changes, adjust the community names (`COMM`) and the CVPR-topic mapping (`TOPIC_OF`) near the top of the script section in `index.html`.
 
-`papers.json` format: one compact record per paper — `[title, cvf_stub, [keyword_indices], community, "Author A, Author B, …"]`.
+For ECCV 2026:
+
+```bash
+curl -o eccv_accepted.html https://eccv.ecva.net/Conferences/2026/AcceptedPapers
+uv run --with 'networkx>=3.0' python scripts/build_graph.py eccv_accepted.html \
+  --venue "ECCV 2026" --source eccv --prefix eccv_
+```
+
+`papers.json` format: one compact record per paper — `[title, link_ref, [keyword_indices], community, "Author A, Author B, …", presentation_flag]`. `link_ref` is a CVF stub for CVPR and a full official poster URL for ECCV.
 
 ## Tech
 
@@ -50,9 +61,9 @@ Or fork this repo and enable GitHub Pages.
 
 ## Credits, data & license
 
-This is an **unofficial visualization** of publicly available CVPR 2026 paper metadata. It is not affiliated with or endorsed by CVPR, CVF, IEEE, or the IEEE Computer Society.
+This is an **unofficial visualization** of publicly available CVPR and ECCV 2026 paper metadata. It is not affiliated with or endorsed by either conference or its organizers.
 
-The site stores only bibliographic metadata (titles, author names, links); no abstracts or PDFs are hosted — every paper links to its official [CVF Open Access](https://openaccess.thecvf.com) page. Paper metadata © the Computer Vision Foundation. arXiv links via [paperswithcode.co](https://paperswithcode.co); world map from Natural Earth (public domain).
+The site stores only bibliographic metadata (titles, author names, links); no abstracts or PDFs are hosted. CVPR papers link to [CVF Open Access](https://openaccess.thecvf.com), and ECCV papers link to the official [ECCV 2026 virtual pages](https://eccv.ecva.net/Conferences/2026/AcceptedPapers). arXiv links via [paperswithcode.co](https://paperswithcode.co); world map from Natural Earth (public domain).
 
 Visitor stats are privacy-friendly: anonymous, aggregate, country-level counts only — no cookies, no IPs stored.
 

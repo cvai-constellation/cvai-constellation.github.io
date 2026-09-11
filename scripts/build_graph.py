@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build graph.json + papers.json for the CVPR Research Constellation.
+"""Build graph.json + papers.json for the Research Constellation.
 
 Pipeline:
   1. Download the CVF Open Access "all papers" listing for a conference, e.g.
@@ -7,7 +7,12 @@ Pipeline:
   2. Run:
        python scripts/build_graph.py cvpr_oa.html --venue "CVPR 2026"
      Writes graph.json (keyword co-occurrence network) and papers.json
-     (one compact record per paper: [title, cvf_stub, [keyword_idx], community, authors]).
+     (one compact record per paper:
+      [title, link_ref, [keyword_idx], community, authors, presentation_flag]).
+
+ECCV accepted-paper pages are also supported:
+       python scripts/build_graph.py eccv_accepted.html --venue "ECCV 2026" \
+         --source eccv --prefix eccv_
 
 Requires: networkx >= 3.0  (pip install networkx)
 """
@@ -137,8 +142,14 @@ LOUVAIN_RES = 1.2
 SEED = 7
 
 
-def parse_listing(path):
-    """Yield (title, cvf_stub, authors) per paper from a CVF Open Access listing."""
+def clean_html(value):
+    """Collapse whitespace and remove simple markup from a listing field."""
+    value = re.sub(r"<[^>]+>", " ", value)
+    return html.unescape(re.sub(r"\s+", " ", value)).strip()
+
+
+def parse_cvf_listing(path):
+    """Yield (title, cvf_stub, authors, flag) from a CVF Open Access listing."""
     doc = open(path, encoding="utf-8", errors="ignore").read()
     papers = []
     for block in re.split(r'<dt class="ptitle">', doc)[1:]:
@@ -148,24 +159,58 @@ def parse_listing(path):
         stub = re.sub(r"_(CVPR|ICCV|WACV)_\d{4}$", "", m.group(1))
         title = html.unescape(re.sub(r"\s+", " ", m.group(2)).strip())
         authors = ", ".join(re.findall(r'name="query_author" value="(.*?)"', block))
-        papers.append((title, stub, authors))
+        papers.append((title, stub, authors, 0))
     return papers
+
+
+def parse_eccv_listing(path):
+    """Yield ECCV title, official poster URL, authors, and award flag."""
+    doc = open(path, encoding="utf-8", errors="ignore").read()
+    papers = []
+    for row in re.findall(r"<tr(?:\s[^>]*)?>(.*?)</tr>", doc, re.S):
+        match = re.search(
+            r'href="(/virtual/\d{4}/poster/\d+)">(.*?)</a>', row, re.S
+        )
+        if not match:
+            continue
+        author_match = re.search(
+            r'<div class="indented">\s*<i>(.*?)</i>', row, re.S
+        )
+        title = clean_html(match.group(2))
+        poster_url = "https://eccv.ecva.net" + match.group(1)
+        authors = clean_html(author_match.group(1)) if author_match else ""
+        authors = re.sub(r"\s*[⋅·]\s*", ", ", authors)
+        flag = 3 if re.search(r'title="Best Paper', row) else 0
+        papers.append((title, poster_url, authors, flag))
+    # The schedule-backed list can repeat a paper in multiple presentation rows.
+    # Keep one bibliographic record per official poster URL and preserve awards.
+    unique = {}
+    for title, poster_url, authors, flag in papers:
+        if poster_url in unique:
+            old = unique[poster_url]
+            unique[poster_url] = (old[0], old[1], old[2], max(old[3], flag))
+        else:
+            unique[poster_url] = (title, poster_url, authors, flag)
+    return list(unique.values())
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("listing", help="saved CVF Open Access ?day=all HTML page")
+    ap.add_argument("listing", help="saved CVF Open Access or ECCV accepted-paper HTML")
     ap.add_argument("--venue", default="CVPR 2026")
+    ap.add_argument("--source", choices=("cvf", "eccv"), default="cvf")
+    ap.add_argument("--prefix", default="", help="output filename prefix, e.g. eccv_")
     args = ap.parse_args()
 
-    papers = parse_listing(args.listing)
+    parser = parse_eccv_listing if args.source == "eccv" else parse_cvf_listing
+    papers = parser(args.listing)
     if not papers:
         sys.exit("no papers parsed — is this a CVF Open Access listing page?")
     print(f"parsed {len(papers)} papers")
 
     pat = {k: re.compile(v) for k, v in KEYWORDS.items()}
     node_count, cooc, paper_kws = Counter(), Counter(), []
-    for title, _, _ in papers:
+    for title, _, _, _ in papers:
         low = title.lower()
         present = sorted(k for k, p in pat.items() if p.search(low))
         paper_kws.append(present)
@@ -202,25 +247,40 @@ def main():
                     best, bw = comm[nb], G[n][nb]["weight"]
             comm[n] = best
     print("community sizes:", Counter(comm.values()).most_common())
+    community_ids = range(max(comm.values()) + 1)
 
     idx = {k: i for i, k in enumerate(nodes)}
     graph = {
         "meta": {"papers": len(papers), "keywords": len(nodes),
                  "links": len(edges), "venue": args.venue,
-                 "communities": N_COMMUNITIES},
+                 "communities": len(community_ids),
+                 "preliminary": args.source == "eccv"},
         "nodes": [{"id": k, "count": node_count[k], "community": comm[k]} for k in nodes],
         "links": [{"source": a, "target": b, "weight": w} for a, b, w in edges],
     }
-    json.dump(graph, open("graph.json", "w"))
+    graph["legend"] = [
+        {
+            "community": i,
+            "top": sorted(
+                (node for node in nodes if comm[node] == i),
+                key=lambda k: -node_count[k],
+            )[:4],
+            "size": sum(1 for node in nodes if comm[node] == i),
+        }
+        for i in community_ids
+    ]
+    graph_path = f"{args.prefix}graph.json"
+    papers_path = f"{args.prefix}papers.json"
+    json.dump(graph, open(graph_path, "w"), separators=(",", ":"))
 
     def paper_comm(kws):
         votes = Counter(comm[k] for k in kws if k in comm)
         return votes.most_common(1)[0][0] if votes else -1
 
-    out = [[t, s, [idx[k] for k in kws if k in idx], paper_comm(kws), au]
-           for (t, s, au), kws in zip(papers, paper_kws)]
-    json.dump(out, open("papers.json", "w"), ensure_ascii=False, separators=(",", ":"))
-    print("wrote graph.json + papers.json")
+    out = [[t, s, [idx[k] for k in kws if k in idx], paper_comm(kws), au, flag]
+           for (t, s, au, flag), kws in zip(papers, paper_kws)]
+    json.dump(out, open(papers_path, "w"), ensure_ascii=False, separators=(",", ":"))
+    print(f"wrote {graph_path} + {papers_path}")
     print("NOTE: if the keyword set changed, update COMM names / TOPIC_OF in index.html")
 
 
