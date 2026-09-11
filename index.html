@@ -331,6 +331,68 @@ h1 em{font-style:italic;font-weight:300;color:var(--c1)}
 .wm-un{cursor:help;border-bottom:1px dotted var(--dim)}
 @media(max-width:860px){.wm{display:none}}
 
+/* ───────── live chat ───────── */
+.chat-toggle{position:fixed;z-index:31;right:16px;bottom:38px;display:inline-flex;align-items:center;gap:8px;
+  min-height:38px;padding:9px 13px;border:1px solid var(--line);border-radius:22px;background:var(--panel);
+  color:var(--ink);font-family:inherit;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  cursor:pointer;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);transition:.18s}
+.chat-toggle:hover{border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.chat-live-dot{width:6px;height:6px;border-radius:50%;background:#7ddf8f;box-shadow:0 0 8px #7ddf8f}
+.chat-toggle.offline .chat-live-dot{background:var(--dim);box-shadow:none}
+.chat-unread{min-width:17px;height:17px;padding:0 5px;border-radius:9px;background:var(--c0);color:#070910;
+  display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;letter-spacing:0}
+.chat-unread[hidden]{display:none}
+.chat-panel{right:16px;bottom:84px;width:min(370px,calc(100vw - 32px));height:min(500px,calc(100vh - 110px));
+  border-radius:8px;display:flex;flex-direction:column;overflow:hidden;opacity:0;transform:translateY(10px) scale(.985);
+  transform-origin:bottom right;pointer-events:none;transition:.2s cubic-bezier(.2,.7,.2,1);z-index:32;
+  box-shadow:0 18px 60px rgba(0,0,0,.42)}
+.chat-panel.on{opacity:1;transform:none;pointer-events:auto}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px 11px;border-bottom:1px solid var(--line)}
+.chat-title{font-family:"Fraunces",serif;font-size:19px;font-weight:400;font-variation-settings:"opsz" 40,"WONK" 1}
+.chat-status{margin-top:2px;font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chat-close{width:30px;height:30px;border:0;background:none;color:var(--dim);font-family:inherit;font-size:16px;line-height:1;cursor:pointer}
+.chat-close:hover{color:var(--ink)}
+.chat-identity{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line);
+  font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.chat-name{min-width:0;flex:1;border:0;border-bottom:1px solid transparent;background:none;color:var(--c1);
+  font-family:inherit;font-size:10px;line-height:1.4;outline:none;padding:2px 0}
+.chat-name:focus{border-color:var(--c1)}
+.chat-messages{flex:1;min-height:0;overflow-y:auto;padding:12px 13px;scrollbar-width:thin;
+  scrollbar-color:var(--dim) transparent;overscroll-behavior:contain}
+.chat-empty{height:100%;display:grid;place-content:center;text-align:center;color:var(--dim);
+  font-family:inherit;font-size:10px;line-height:1.7;padding:20px}
+.chat-msg{margin:0 0 12px;max-width:88%}
+.chat-msg.mine{margin-left:auto}
+.chat-msg-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:8px;color:var(--dim)}
+.chat-msg.mine .chat-msg-meta{justify-content:flex-end}
+.chat-msg-name{color:var(--muted);font-weight:500}
+.chat-msg-venue{padding:1px 4px;border:1px solid var(--line);border-radius:3px;font-size:7px;letter-spacing:.08em}
+.chat-msg-text{display:inline-block;padding:7px 9px;border:1px solid var(--line);border-radius:3px 10px 10px 10px;
+  background:rgba(255,255,255,.035);color:var(--ink);font-size:10.5px;line-height:1.55;overflow-wrap:anywhere;
+  white-space:pre-wrap}
+.chat-msg.mine .chat-msg-text{display:block;margin-left:auto;width:max-content;max-width:100%;border-radius:10px 3px 10px 10px;
+  border-color:rgba(82,211,195,.26);background:rgba(82,211,195,.08)}
+.chat-notice{min-height:19px;padding:2px 14px;font-size:8.5px;color:var(--c0)}
+.chat-form{display:flex;gap:7px;padding:8px 10px 5px;border-top:1px solid var(--line)}
+.chat-input{min-width:0;flex:1;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.025);
+  color:var(--ink);font-family:inherit;font-size:10.5px;line-height:1.4;outline:none;padding:8px 11px}
+.chat-input:focus{border-color:rgba(82,211,195,.5)}
+.chat-input::placeholder{color:var(--dim)}
+.chat-send{border:0;border-radius:18px;padding:7px 12px;background:var(--c1);color:#070910;font-family:inherit;
+  font-size:8.5px;font-weight:700;line-height:1;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.chat-send:disabled{opacity:.35;cursor:default}
+.chat-retention{padding:2px 12px 9px;text-align:center;font-size:7.5px;color:var(--dim);letter-spacing:.04em}
+html.light .chat-msg-text,html.light .chat-input{background:rgba(30,30,45,.035)}
+@media(max-width:860px){
+  .chat-toggle{right:12px;bottom:58px;min-height:36px;background:rgba(13,17,26,.95)}
+  html.light .chat-toggle{background:rgba(251,248,241,.95)}
+  .chat-panel{left:0;right:0;bottom:0;width:auto;height:min(62dvh,520px);border-radius:16px 16px 0 0;
+    transform:translateY(105%);transform-origin:bottom center;background:#0a0d15!important}
+  html.light .chat-panel{background:#faf6ee!important}
+  .chat-panel.on{transform:none}
+  body.chat-open .ctrlbtn,body.chat-open .reset{opacity:0;pointer-events:none}
+}
+
 /* ───────── theme switch ───────── */
 .themebtn{position:fixed;z-index:21;top:30px;right:404px;width:41px;height:41px;border-radius:50%;
   background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:15px;cursor:pointer;
@@ -444,6 +506,28 @@ html.light .lite .drawer{background:rgba(251,248,241,.96)}
 </div>
 
 <button class="reset" id="reset">↺ reset view</button>
+
+<button class="chat-toggle offline" id="chat-toggle" aria-controls="chat-panel" aria-expanded="false">
+  <span class="chat-live-dot"></span><span>live chat</span><span class="chat-unread" id="chat-unread" hidden>0</span>
+</button>
+<section class="panel chat-panel" id="chat-panel" aria-label="Live chat" aria-hidden="true">
+  <header class="chat-head">
+    <div><div class="chat-title">Constellation chat</div><div class="chat-status" id="chat-status">open to connect</div></div>
+    <button class="chat-close" id="chat-close" aria-label="Close chat">×</button>
+  </header>
+  <label class="chat-identity">chatting as
+    <input class="chat-name" id="chat-name" maxlength="24" autocomplete="nickname" aria-label="Nickname"/>
+  </label>
+  <div class="chat-messages" id="chat-messages" role="log" aria-live="polite" aria-relevant="additions">
+    <div class="chat-empty" id="chat-empty">No messages yet.<br/>Say hello to researchers online.</div>
+  </div>
+  <div class="chat-notice" id="chat-notice" aria-live="polite"></div>
+  <form class="chat-form" id="chat-form">
+    <input class="chat-input" id="chat-input" maxlength="280" autocomplete="off" placeholder="Write a short message…" aria-label="Message"/>
+    <button class="chat-send" id="chat-send" type="submit" disabled>send</button>
+  </form>
+  <div class="chat-retention">anonymous · plain text only · recent messages expire after 24 hours</div>
+</section>
 
 <div class="wm" title="Unofficial community project — not affiliated with the conference organizers. Paper metadata comes from the respective official conference listing; no paper files are hosted. Visitor stats are anonymous country-level counts only.">✦ by <a href="https://deo-ahn.github.io" target="_blank" rel="noopener">Deokhyun Ahn</a><span class="wm-sep">·</span><a href="https://github.com/cvai-constellation/cvai-constellation.github.io" target="_blank" rel="noopener">GitHub</a><span class="wm-sep">·</span><span class="wm-un">unofficial</span></div>
 
@@ -1327,6 +1411,122 @@ addEventListener("resize",()=>{
   }
   if(!systemNode)baseForces();
   sim.alpha(.3).restart();});
+
+/* ---------- anonymous live chat (Cloudflare Durable Object WebSocket) ---------- */
+(function(){
+  const PROD_WS="wss://cvai-chat-gateway.pages.dev/chat";
+  const LOCAL=/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  const ENDPOINT=LOCAL?"ws://127.0.0.1:8787/chat":PROD_WS;
+  const el=id=>document.getElementById(id);
+  const toggle=el("chat-toggle"),panel=el("chat-panel"),close=el("chat-close");
+  const status=el("chat-status"),messages=el("chat-messages"),notice=el("chat-notice");
+  const form=el("chat-form"),input=el("chat-input"),send=el("chat-send");
+  const nameInput=el("chat-name"),unreadEl=el("chat-unread");
+  let socket=null,retryTimer=null,retryDelay=1000,sessionId="",unread=0,noticeTimer=null;
+  const seen=new Set();
+
+  function clean(value,limit){
+    return Array.from(String(value||"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim())
+      .slice(0,limit).join("");
+  }
+  function randomName(){
+    const words=["nova","orbit","comet","quasar","photon","nebula","pulsar","lumen"];
+    return `${words[Math.floor(Math.random()*words.length)]}-${Math.random().toString(36).slice(2,6)}`;
+  }
+  function loadName(){
+    try{
+      const saved=clean(localStorage.getItem("cvai_chat_name"),24);if(saved)return saved;
+      const generated=randomName();localStorage.setItem("cvai_chat_name",generated);return generated;
+    }catch(_){return randomName();}
+  }
+  let nickname=loadName();
+  nameInput.value=nickname;
+
+  function showNotice(text){
+    clearTimeout(noticeTimer);notice.textContent=text||"";
+    if(text)noticeTimer=setTimeout(()=>{notice.textContent="";},3200);
+  }
+  function setPresence(count){
+    status.textContent=`${Number(count)||0} in chat`;
+  }
+  function setConnected(connected){
+    toggle.classList.toggle("offline",!connected);
+    send.disabled=!connected;
+    if(!connected)status.textContent=navigator.onLine?"reconnecting…":"offline";
+  }
+  function setUnread(value){
+    unread=value;unreadEl.textContent=value>99?"99+":String(value);unreadEl.hidden=!value;
+  }
+  function openChat(open){
+    panel.classList.toggle("on",open);panel.setAttribute("aria-hidden",String(!open));
+    toggle.setAttribute("aria-expanded",String(open));document.body.classList.toggle("chat-open",open);
+    if(open){setUnread(0);if(!socket)connect();setTimeout(()=>input.focus(),120);}
+  }
+  function emptyState(){
+    const empty=document.createElement("div");empty.className="chat-empty";empty.id="chat-empty";
+    empty.append("No messages yet.",document.createElement("br"),"Say hello to researchers online.");
+    messages.replaceChildren(empty);
+  }
+  function appendMessage(message,fromHistory=false){
+    if(!message||!message.id||seen.has(message.id))return;
+    seen.add(message.id);el("chat-empty")?.remove();
+    const item=document.createElement("article");
+    item.className="chat-msg"+(message.senderId===sessionId?" mine":"");
+    const meta=document.createElement("div");meta.className="chat-msg-meta";
+    const author=document.createElement("span");author.className="chat-msg-name";author.textContent=message.name||"guest";
+    const venue=document.createElement("span");venue.className="chat-msg-venue";venue.textContent=message.venue||"CVPR";
+    const time=document.createElement("time");
+    const date=new Date(Number(message.ts)||Date.now());time.dateTime=date.toISOString();
+    time.textContent=date.toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});
+    const body=document.createElement("div");body.className="chat-msg-text";body.textContent=message.text||"";
+    meta.append(author,venue,time);item.append(meta,body);messages.append(item);
+    if(!fromHistory&&!panel.classList.contains("on")&&message.senderId!==sessionId)setUnread(unread+1);
+    messages.scrollTop=messages.scrollHeight;
+  }
+  function scheduleReconnect(){
+    clearTimeout(retryTimer);
+    retryTimer=setTimeout(connect,retryDelay);
+    retryDelay=Math.min(retryDelay*2,15000);
+  }
+  function connect(){
+    clearTimeout(retryTimer);
+    if(socket&&(socket.readyState===WebSocket.CONNECTING||socket.readyState===WebSocket.OPEN))return;
+    if(!navigator.onLine){setConnected(false);scheduleReconnect();return;}
+    const url=new URL(ENDPOINT);url.searchParams.set("name",nickname);url.searchParams.set("venue",VENUE_KEY);
+    const current=new WebSocket(url);socket=current;status.textContent="connecting…";
+    current.onopen=()=>{if(socket!==current)return;retryDelay=1000;setConnected(true);};
+    current.onmessage=event=>{
+      if(socket!==current||event.data==="pong")return;
+      let data;try{data=JSON.parse(event.data);}catch(_){return;}
+      if(data.type==="hello"){
+        sessionId=data.sessionId||"";seen.clear();emptyState();
+        (Array.isArray(data.history)?data.history:[]).forEach(message=>appendMessage(message,true));
+        setPresence(data.presence);return;
+      }
+      if(data.type==="presence"){setPresence(data.count);return;}
+      if(data.type==="message"){appendMessage(data);return;}
+      if(data.type==="error")showNotice(data.message||"Message could not be sent.");
+    };
+    current.onclose=()=>{if(socket!==current)return;socket=null;setConnected(false);scheduleReconnect();};
+    current.onerror=()=>current.close();
+  }
+
+  toggle.addEventListener("click",()=>openChat(!panel.classList.contains("on")));
+  close.addEventListener("click",()=>openChat(false));
+  addEventListener("keydown",event=>{if(event.key==="Escape"&&panel.classList.contains("on"))openChat(false);});
+  form.addEventListener("submit",event=>{
+    event.preventDefault();const text=clean(input.value,280);if(!text)return;
+    if(!socket||socket.readyState!==WebSocket.OPEN){showNotice("Chat is reconnecting.");return;}
+    socket.send(JSON.stringify({type:"chat",text}));input.value="";
+  });
+  nameInput.addEventListener("change",()=>{
+    const next=clean(nameInput.value,24)||randomName();nameInput.value=next;
+    if(next===nickname)return;nickname=next;
+    try{localStorage.setItem("cvai_chat_name",nickname);}catch(_){}
+    const previous=socket;socket=null;if(previous)previous.close(1000,"nickname changed");connect();
+  });
+  addEventListener("online",()=>{if(panel.classList.contains("on"))connect();});
+})();
 
 /* ---------- visitor stats (serverless: Abacus counters + ipwho.is geo) ---------- */
 (function(){

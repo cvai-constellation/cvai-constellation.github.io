@@ -22,9 +22,10 @@ Use the conference tabs in the masthead to switch views. The ECCV source list is
 - **Workshops galaxies** — all 150 CVPR 2026 workshops grouped by the official site's categories; stars with published proceedings list their papers, the rest link to the workshop page
 - **Light/dark theme** — ivory light theme with a toggle; defaults to the system color scheme
 - **Visitor stats** — cumulative visitors, ~live viewers, top regions and a mini world map (serverless: [Abacus](https://abacus.jasoncameron.dev) counters + [ipapi.co](https://ipapi.co))
+- **Live chat** — anonymous real-time chat for current visitors; plain-text messages are rate-limited and the latest 50 expire after 24 hours
 - **Mobile-friendly** — responsive layout with a bottom-sheet paper list and a lite rendering tier (no SVG filters) for phones/tablets
 
-Everything is a static `index.html` plus compact JSON data files. No app build step, no backend.
+The visualization is a static `index.html` plus compact JSON data files. Live chat is relayed by a small Cloudflare Durable Object Worker in `chat-worker/` through the `chat-gateway/` Pages Function; there is no app build step.
 
 ## Run it yourself
 
@@ -35,6 +36,18 @@ python3 -m http.server          # then open http://localhost:8000
 ```
 
 Or fork this repo and enable GitHub Pages.
+
+To run or deploy the chat relay, use Wrangler from `chat-worker/`:
+
+```bash
+cd chat-worker
+npx --yes wrangler@latest dev       # local WebSocket relay on port 8787
+npx --yes wrangler@latest deploy    # deploy after `wrangler login`
+cd ../chat-gateway
+npx --yes wrangler@latest pages deploy public --project-name your-chat-gateway
+```
+
+The production site uses the Pages Function in `chat-gateway/` as its WebSocket endpoint. After deploying your own copies, update `PROD_WS` in `index.html` to the resulting `pages.dev` URL.
 
 ## Rebuild the data (e.g. for another conference/year)
 
@@ -57,7 +70,7 @@ uv run --with 'networkx>=3.0' python scripts/build_graph.py eccv_accepted.html \
 
 ## Tech
 
-[D3 v7](https://d3js.org) force simulation, vanilla JS, Fraunces + JetBrains Mono. Paper data scraped from [CVF Open Access](https://openaccess.thecvf.com).
+[D3 v7](https://d3js.org) force simulation, vanilla JS, Cloudflare Durable Objects, Fraunces + JetBrains Mono. Paper data scraped from [CVF Open Access](https://openaccess.thecvf.com).
 
 ## Credits, data & license
 
@@ -65,7 +78,7 @@ This is an **unofficial visualization** of publicly available CVPR and ECCV 2026
 
 The site stores only bibliographic metadata (titles, author names, links); no abstracts or PDFs are hosted. CVPR papers link to [CVF Open Access](https://openaccess.thecvf.com), and ECCV papers link to the official [ECCV 2026 virtual pages](https://eccv.ecva.net/Conferences/2026/AcceptedPapers). arXiv links via [paperswithcode.co](https://paperswithcode.co); world map from Natural Earth (public domain).
 
-Visitor stats are privacy-friendly: anonymous, aggregate, country-level counts only — no cookies, no IPs stored.
+Visitor stats are privacy-friendly: anonymous, aggregate, country-level counts only. The application does not store cookies or IP addresses. Chat uses a locally saved random nickname and retains at most 50 plain-text messages for 24 hours; no chat account is required.
 
 Built by [Deokhyun Ahn](https://deo-ahn.github.io) ([@Deo-ahn](https://github.com/Deo-ahn)).
 
