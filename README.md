@@ -4,7 +4,7 @@ An interactive keyword co-occurrence map of **4,068 CVPR 2026 papers** and **2,8
 
 Use the conference tabs in the masthead to switch views. The ECCV source list is preliminary pending publisher checks; 17 repeated schedule rows are deduplicated by official poster URL.
 
-**Live demo → https://cvpr-constellation.github.io/**
+**Live demo → https://cvai-constellation.github.io/**
 
 ![screenshot](docs/screenshot.jpg)
 
